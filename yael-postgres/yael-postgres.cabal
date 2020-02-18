@@ -1,0 +1,91 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.31.1.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: e6e739c4228e79a3cbf949d2445bd59ab1dd1341c4181e00e83fff6ccca2eb7e
+
+name:           yael-postgres
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/benwetizman/yael#readme>
+homepage:       https://github.com/benweitzman/yael#readme
+bug-reports:    https://github.com/benweitzman/yael/issues
+author:         Ben Weitzmn
+maintainer:     benweitzman@gmail.com
+copyright:      2020 Ben Weitzman
+license:        MIT
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+
+source-repository head
+  type: git
+  location: https://github.com/benweitzman/yael
+
+library
+  exposed-modules:
+      Yael.Eff.Persistent
+      Yael.Eff.Postgres
+  other-modules:
+      Lib
+      Paths_yael_postgres
+  hs-source-dirs:
+      src
+  default-extensions: TypeFamilies DataKinds ConstraintKinds TypeOperators NamedFieldPuns DerivingStrategies GeneralizedNewtypeDeriving RankNTypes FlexibleContexts FlexibleInstances MultiParamTypeClasses DefaultSignatures TypeApplications ScopedTypeVariables StrictData PolyKinds DeriveGeneric
+  build-depends:
+      base >=4.7 && <5
+    , monad-control
+    , monad-logger
+    , persistent
+    , persistent-postgresql
+    , postgresql-simple
+    , resource-pool
+    , unliftio
+    , yael >=0.1.0.0 && <0.2
+  default-language: Haskell2010
+
+executable yael-postgres-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_yael_postgres
+  hs-source-dirs:
+      app
+  default-extensions: TypeFamilies DataKinds ConstraintKinds TypeOperators NamedFieldPuns DerivingStrategies GeneralizedNewtypeDeriving RankNTypes FlexibleContexts FlexibleInstances MultiParamTypeClasses DefaultSignatures TypeApplications ScopedTypeVariables StrictData PolyKinds DeriveGeneric
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , monad-control
+    , monad-logger
+    , persistent
+    , persistent-postgresql
+    , postgresql-simple
+    , resource-pool
+    , unliftio
+    , yael >=0.1.0.0 && <0.2
+    , yael-postgres
+  default-language: Haskell2010
+
+test-suite yael-postgres-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_yael_postgres
+  hs-source-dirs:
+      test
+  default-extensions: TypeFamilies DataKinds ConstraintKinds TypeOperators NamedFieldPuns DerivingStrategies GeneralizedNewtypeDeriving RankNTypes FlexibleContexts FlexibleInstances MultiParamTypeClasses DefaultSignatures TypeApplications ScopedTypeVariables StrictData PolyKinds DeriveGeneric
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , monad-control
+    , monad-logger
+    , persistent
+    , persistent-postgresql
+    , postgresql-simple
+    , resource-pool
+    , unliftio
+    , yael >=0.1.0.0 && <0.2
+    , yael-postgres
+  default-language: Haskell2010

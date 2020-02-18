@@ -1,23 +1,14 @@
-name:                yael
-version:             0.1.0.0
-github:              "benweitzman/yael"
-license:             MIT
-author:              "Ben Weitzmn"
-maintainer:          "benweitzman@gmail.com"
-copyright:           "2020 Ben Weitzman"
+name: yael
+version: 0.1.0.0
+
+_include: !include '../package.yaml'
 
 extra-source-files:
-- README.md
 - ChangeLog.md
 
-# Metadata used when publishing your package
-# synopsis:            Short description of your package
-# category:            Web
-
-# To avoid duplicated efforts in documentation and dealing with the
-# complications of embedding Haddock markup inside cabal files, it is
-# common to point users to the README.md file.
 description:         Please see the README on GitHub at <https://github.com/benweitzman/yael#readme>
+
+<<: *common
 
 dependencies:
 - base >= 4.7 && < 5
@@ -31,23 +22,7 @@ dependencies:
 - unliftio >= 0.2.12 && < 0.3
 
 default-extensions:
-- TypeFamilies
-- DataKinds
-- ConstraintKinds
-- TypeOperators
-- NamedFieldPuns
-- DerivingStrategies
-- GeneralizedNewtypeDeriving
-- RankNTypes
-- FlexibleContexts
-- FlexibleInstances
-- MultiParamTypeClasses
-- DefaultSignatures
-- TypeApplications
-- ScopedTypeVariables
-- StrictData
-- PolyKinds
-- DeriveGeneric
+  *default-extensions
 
 library:
   source-dirs: src

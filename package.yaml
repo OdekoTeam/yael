@@ -1,0 +1,26 @@
+- &common
+  github:              "benweitzman/yael"
+  license:             MIT
+  author:              "Ben Weitzmn"
+  maintainer:          "benweitzman@gmail.com"
+  copyright:           "2020 Ben Weitzman"
+
+
+- &default-extensions
+  - TypeFamilies
+  - DataKinds
+  - ConstraintKinds
+  - TypeOperators
+  - NamedFieldPuns
+  - DerivingStrategies
+  - GeneralizedNewtypeDeriving
+  - RankNTypes
+  - FlexibleContexts
+  - FlexibleInstances
+  - MultiParamTypeClasses
+  - DefaultSignatures
+  - TypeApplications
+  - ScopedTypeVariables
+  - StrictData
+  - PolyKinds
+  - DeriveGeneric
