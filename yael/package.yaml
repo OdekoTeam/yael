@@ -21,13 +21,14 @@ description:         Please see the README on GitHub at <https://github.com/benw
 
 dependencies:
 - base >= 4.7 && < 5
+- lens >= 4.17.1 && < 4.18
+- lifted-base >= 0.2.3.12 && < 0.3
+- monad-control >= 1.0.2.3 && < 1.1
 - mtl >= 2.2.2 && < 2.3
+- safe-exceptions >= 0.1.7.0 && < 0.2
 - transformers >= 0.5.6.2 && < 0.6
-- transformers-base
-- unliftio
-- lens
-- exceptions
-- monad-control
+- transformers-base >= 0.4.5.2 && < 0.5
+- unliftio >= 0.2.12 && < 0.3
 
 default-extensions:
 - TypeFamilies
@@ -53,6 +54,7 @@ library:
   exposed-modules:
   - Yael.Eff
   - Yael.Eff.Log
+  - Yael.Eff.Async
 
 executables:
   yael-exe:
