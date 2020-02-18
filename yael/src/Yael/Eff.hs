@@ -12,7 +12,7 @@ import Control.Applicative
 import Control.Monad
 import Control.Monad.Trans
 import qualified Control.Monad.Reader as R
-import Control.Monad.Catch
+import Control.Exception.Safe
 import UnliftIO (MonadUnliftIO(..), withUnliftIO, UnliftIO(..))
 import Data.Function ((&))
 import GHC.TypeLits
