@@ -1,5 +1,6 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE QuantifiedConstraints #-}
 
 module Yael.Eff
   ( (&)
@@ -19,15 +20,23 @@ import GHC.TypeLits
 import GHC.Generics
 import Control.Monad.Base
 import Control.Monad.Trans.Control
+import Control.Monad.Identity
 
-newtype EffT f m a = EffT
-  { unEffT :: R.ReaderT (f (EffT f m)) m a
-  } deriving newtype ( Functor, Applicative, Monad, MonadIO, MonadThrow, MonadCatch
+
+newtype EffT (f :: (* -> *) -> *) (m :: * -> *) (a :: *) = EffT
+  { unEffT :: R.ReaderT (f m) m a
+  }
+  deriving newtype ( Functor, Applicative, Monad, MonadIO, MonadThrow, MonadCatch
                      , MonadMask, MonadPlus, Alternative, MonadBase s, MonadBaseControl s)
 
-runEffT :: EffT f m a -> f (EffT f m) -> m a
-runEffT = R.runReaderT . unEffT
+runEffT
+  :: forall f m a
+   . EffT f m a
+  -> f m
+  -> m a
+runEffT (EffT (R.ReaderT r)) y = r y
 
+{-
 instance MonadUnliftIO m => MonadUnliftIO (EffT f m) where
   {-# INLINE askUnliftIO #-}
   askUnliftIO = EffT . R.ReaderT $ \r ->
@@ -38,29 +47,58 @@ instance MonadUnliftIO m => MonadUnliftIO (EffT f m) where
     EffT . R.ReaderT $ \r ->
     withRunInIO $ \run ->
     inner (run . flip runEffT r)
+-}
 
+{-
 instance MonadTrans (EffT f) where
-  lift = EffT . lift
+  lift x = EffT $ \_ -> x
+-}
 
-askEffT :: Monad m => EffT f m (f (EffT f m))
-askEffT = EffT R.ask
+withEffT :: (Monad m, Project (f m) (g m)) => (forall n . g n -> n a) -> EffT f m a
+withEffT ap = withEffT' $ const ap
 
-localEffT :: (f (EffT f m) -> f (EffT f m)) -> EffT f m a -> EffT f m a
-localEffT f m = EffT . R.ReaderT $ runEffT m . f
+withEffT'
+  :: (Project (f m) (g m))
+  => (forall n . (forall x . EffT f m x -> n x) -> g n -> n a)
+  -> EffT f m a
+withEffT' ap = EffT . R.ReaderT $ \f -> ap (\e -> runEffT e f) (f ^. prj)
 
-class Monad m => MonadEff m where
+data X m = X
+  { _xop :: String -> Int -> m Bool
+  , _yop :: forall a . m a -> m [a]
+  }
+
+xop :: (Monad m, Project (f m) (X m)) => String -> Int -> EffT f m Bool
+xop s i = withEffT $ \X{_xop} -> _xop s i
+
+yop :: (Monad m, Project (f m) (X m)) => EffT f m a -> EffT f m [a]
+yop e = withEffT' $ \lower X{_yop} -> _yop $ lower e
+
+showX :: (MonadIO m) => X m
+showX = X
+  { _xop = \s i -> liftIO $ do
+      putStrLn s
+      print i
+      return True
+  , _yop = \m -> replicateM 10 m
+  }
+
+localEffT :: (f m -> f m) -> EffT f m a -> EffT f m a
+localEffT f (EffT (R.ReaderT r)) = EffT . R.ReaderT $ r . f
+
+mapEffT
+  :: Monad m
+  => (f m -> g m)
+  -> EffT g m a
+  -> EffT f m a
+mapEffT f (EffT (R.ReaderT r)) = EffT . R.ReaderT $ \g -> r (f g)
+
+class MonadEff m where
   type F m :: (* -> *) -> *
 
-  askEff :: m (F m m)
-
-  localEff :: (F m m -> F m m) -> m a -> m a
-
-instance (Monad m) => MonadEff (EffT f m) where
-  type F (EffT f m) = f
-
-  askEff = askEffT
-
-  localEff = localEffT
+  withEff'
+    :: (forall n. (forall x . m x -> n x) -> F m n -> n a)
+    -> m a
 
 class Project f g where
   prj :: Lens' f g
@@ -111,6 +149,7 @@ instance
   Project x y where
   prj = error "Missing implementation! This should be a type error"
 
+{-
 type Has a m = (Project (F m m) a, MonadEff m)
 
 type HasEff f m = Has (f m) m
@@ -152,3 +191,4 @@ type family fs :/ ds where
 infix 7 :+
 
 type (:+) v effs = forall m . (HasEffs effs m) => m v
+-}
