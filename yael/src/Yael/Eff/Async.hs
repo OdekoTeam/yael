@@ -12,5 +12,5 @@ newtype Async m = Async
 concurrentAsync :: (MonadBaseControl IO m) => Async m
 concurrentAsync = Async fork
 
-async :: (HasEff Async m) => m () -> m ThreadId
-async m = withEff' $ \lower Async{_async} -> _async (lower m)
+async :: (HasEff Async f) => EffT f m () -> EffT f m ThreadId
+async m = withEffT' $ \lower Async{_async} -> _async (lower m)

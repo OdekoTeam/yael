@@ -1,0 +1,58 @@
+name:                yael-postgres
+version:             0.1.0.0
+
+_include: !include '../package.yaml'
+
+<<: *common
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+description:         Please see the README on GitHub at <https://github.com/benwetizman/yael#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+- yael >= 0.1.0.0 && < 0.2
+- persistent
+- persistent-postgresql
+- unliftio
+- resource-pool
+- postgresql-simple
+- monad-control
+- monad-logger
+
+
+default-extensions:
+  *default-extensions
+
+library:
+  source-dirs: src
+
+  exposed-modules:
+  - Yael.Eff.Persistent
+  - Yael.Eff.Postgres
+
+
+
+executables:
+  yael-postgres-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - yael-postgres
+
+tests:
+  yael-postgres-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - yael-postgres

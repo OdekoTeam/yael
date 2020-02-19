@@ -1,0 +1,59 @@
+name: yael
+version: 0.1.0.0
+
+_include: !include '../package.yaml'
+
+extra-source-files:
+- ChangeLog.md
+
+description:         Please see the README on GitHub at <https://github.com/benweitzman/yael#readme>
+
+<<: *common
+
+dependencies:
+- base >= 4.7 && < 5
+- lens >= 4.17.1 && < 4.18
+- lifted-base >= 0.2.3.12 && < 0.3
+- monad-control >= 1.0.2.3 && < 1.1
+- mtl >= 2.2.2 && < 2.3
+- safe-exceptions >= 0.1.7.0 && < 0.2
+- transformers >= 0.5.6.2 && < 0.6
+- transformers-base >= 0.4.5.2 && < 0.5
+- unliftio >= 0.2.12 && < 0.3
+
+default-extensions:
+  *default-extensions
+
+library:
+  source-dirs: src
+  exposed-modules:
+  - Yael.Eff
+  - Yael.Eff.Log
+  - Yael.Eff.Async
+
+executables:
+  yael-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - yael
+    - mtl
+    - transformers
+    - lens
+    - lifted-base
+    - monad-control
+
+tests:
+  yael-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - yael

@@ -1,16 +1,11 @@
-{-# LANGUAGE TemplateHaskell #-}
-
 module Main where
 
-import Control.Lens ((^.), makeLenses)
 import Yael.Eff
 import Yael.Eff.Log
 import Yael.Eff.Async
 import Control.Monad.Trans
 import Control.Monad.Trans.Maybe
 import Control.Monad
-import Control.Monad.Trans.Control
-import Control.Concurrent.Lifted
 
 data T m = T
   { _op :: m Int
@@ -26,25 +21,24 @@ dummyT = T
   }
 
 op :: Int :+ '[T]
-op = withEff _op
+op = withEffT _op
 
-hop :: HasEffs '[T] m => m Int -> m [Int]
-hop mx = withEff' $ \lower T{_hop} -> _hop (lower mx)
+hop :: HasEffs '[T] f => EffT f m Int -> EffT f m [Int]
+hop mx = withEffT' $ \lower T{_hop} -> _hop (lower mx)
 
 mop :: Maybe Int :+ '[T]
-mop = withEff _mop
-
+mop = withEffT _mop
 
 newtype Q m = Q
   { _qop :: m Bool
   }
 
 qop :: Bool :+ '[Q]
-qop = withEff _qop
+qop = withEffT _qop
 
 someFunc
-  :: (HasEffs '[T, Q, Log, Async] m)
-  => m (Maybe (Int, [Int], [Int]))
+  :: (HasEffs '[T, Q, Log, Async] f, Monad m)
+  => EffT f m (Maybe (Int, [Int], [Int]))
 someFunc = runMaybeT $ do
   x <- lift op
   y <- lift $ hop op
@@ -59,7 +53,7 @@ someFunc = runMaybeT $ do
 --  g <- lift . locallyEff not $ asksEff
   return (x, y, z)
 
-someFunc' :: (HasEffs '[T] m, MonadPlus m) => m (Int, [Int], [Int])
+someFunc' :: (HasEffs '[T] f, MonadPlus m) => EffT f m (Int, [Int], [Int])
 someFunc' = do
   x <- op
   _ <- mzero

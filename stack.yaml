@@ -33,7 +33,8 @@ resolver: lts-14.25
 #  - auto-update
 #  - wai
 packages:
-- .
+- yael
+- yael-postgres
 # Dependency packages to be pulled from upstream that are not in the resolver
 # using the same syntax as the packages field.
 # (e.g., acme-missiles-0.3)

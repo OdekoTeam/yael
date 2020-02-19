@@ -13,7 +13,7 @@ import Control.Applicative
 import Control.Monad
 import Control.Monad.Trans
 import qualified Control.Monad.Reader as R
-import Control.Monad.Catch
+import Control.Exception.Safe
 import UnliftIO (MonadUnliftIO(..), withUnliftIO, UnliftIO(..))
 import Data.Function ((&))
 import GHC.TypeLits
@@ -87,23 +87,7 @@ mapEffT
   -> EffT f m a
 mapEffT f (EffT (R.ReaderT r)) = EffT . R.ReaderT $ \g -> r (f g)
 
-class Monad m => MonadEff m where
-  type F m :: (* -> *) -> *
-
-  withEff'
-    :: (Project (F m) g)
-    => (forall n . (forall x . m x -> n x) -> g n -> n a)
-    -> m a
-
-withEff :: (Project (F m) g, MonadEff m) => (forall n . g n -> n a) -> m a
-withEff use = withEff' $ const use
-
-instance Monad m => MonadEff (EffT f m) where
-  type F (EffT f m) = f
-
-  withEff' = withEffT'
-
-class Project f g where
+class Project (f :: (* -> *) -> *) g where
 
   prj :: Lens' (f m) (g m)
 
@@ -159,13 +143,13 @@ instance
   Project x y where
   prj = error "Missing implementation! This should be a type error"
 
-type HasEff a m = (Project (F m) a, MonadEff m)
+type HasEff a m = (Project m a)
 
 data AccessType where
   Effect :: f -> AccessType
 
 type family HasOne x m where
-  HasOne ('Effect f) m = HasEff f m
+  HasOne ('Effect f) m = Project m f
 
 type family HasAll xs m where
   HasAll '[x] m = HasOne x m
@@ -189,4 +173,4 @@ type family fs :/ ds where
 
 infix 7 :+
 
-type (:+) v effs = forall m . (HasEffs effs m) => m v
+type (:+) v effs = forall m f . (HasEffs effs f, Monad m) => EffT f m v

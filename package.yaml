@@ -1,83 +1,26 @@
-name:                yael
-version:             0.1.0.0
-github:              "benweitzman/yael"
-license:             MIT
-author:              "Ben Weitzmn"
-maintainer:          "benweitzman@gmail.com"
-copyright:           "2020 Ben Weitzman"
+- &common
+  github:              "benweitzman/yael"
+  license:             MIT
+  author:              "Ben Weitzmn"
+  maintainer:          "benweitzman@gmail.com"
+  copyright:           "2020 Ben Weitzman"
 
-extra-source-files:
-- README.md
-- ChangeLog.md
 
-# Metadata used when publishing your package
-# synopsis:            Short description of your package
-# category:            Web
-
-# To avoid duplicated efforts in documentation and dealing with the
-# complications of embedding Haddock markup inside cabal files, it is
-# common to point users to the README.md file.
-description:         Please see the README on GitHub at <https://github.com/benweitzman/yael#readme>
-
-dependencies:
-- base >= 4.7 && < 5
-- mtl >= 2.2.2 && < 2.3
-- transformers >= 0.5.6.2 && < 0.6
-- transformers-base
-- unliftio
-- lens
-- exceptions
-- monad-control
-- lifted-base
-
-default-extensions:
-- TypeFamilies
-- DataKinds
-- ConstraintKinds
-- TypeOperators
-- NamedFieldPuns
-- DerivingStrategies
-- GeneralizedNewtypeDeriving
-- RankNTypes
-- FlexibleContexts
-- FlexibleInstances
-- MultiParamTypeClasses
-- DefaultSignatures
-- TypeApplications
-- ScopedTypeVariables
-- StrictData
-- PolyKinds
-- DeriveGeneric
-
-library:
-  source-dirs: src
-  exposed-modules:
-  - Yael.Eff
-  - Yael.Eff.Log
-
-executables:
-  yael-exe:
-    main:                Main.hs
-    source-dirs:         app
-    ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
-    dependencies:
-    - yael
-    - mtl
-    - transformers
-    - lens
-    - lifted-base
-    - monad-control
-
-tests:
-  yael-test:
-    main:                Spec.hs
-    source-dirs:         test
-    ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
-    dependencies:
-    - yael
+- &default-extensions
+  - TypeFamilies
+  - DataKinds
+  - ConstraintKinds
+  - TypeOperators
+  - NamedFieldPuns
+  - DerivingStrategies
+  - GeneralizedNewtypeDeriving
+  - RankNTypes
+  - FlexibleContexts
+  - FlexibleInstances
+  - MultiParamTypeClasses
+  - DefaultSignatures
+  - TypeApplications
+  - ScopedTypeVariables
+  - StrictData
+  - PolyKinds
+  - DeriveGeneric
