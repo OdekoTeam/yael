@@ -28,6 +28,7 @@ dependencies:
 - lens
 - exceptions
 - monad-control
+- lifted-base
 
 default-extensions:
 - TypeFamilies

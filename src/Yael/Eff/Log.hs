@@ -8,7 +8,7 @@ newtype Log m = Log
   }
 
 logg :: String -> () :+ '[Log]
-logg s = asksEff >>= flip _log s
+logg s = withEff $ \Log{_log} -> _log s
 
 stdoutLog :: (MonadIO m) => Log m
 stdoutLog = Log $ liftIO . putStrLn

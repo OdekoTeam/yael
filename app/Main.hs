@@ -26,15 +26,13 @@ dummyT = T
   }
 
 op :: Int :+ '[T]
-op = asksEff >>= _op
+op = withEff _op
 
 hop :: HasEffs '[T] m => m Int -> m [Int]
-hop mx = do
-  t <- asksEff
-  _hop t mx
+hop mx = withEff' $ \lower T{_hop} -> _hop (lower mx)
 
 mop :: Maybe Int :+ '[T]
-mop = asksEff >>= _mop
+mop = withEff _mop
 
 
 newtype Q m = Q
@@ -42,13 +40,11 @@ newtype Q m = Q
   }
 
 qop :: Bool :+ '[Q]
-qop = asksEff >>= _qop
+qop = withEff _qop
 
 someFunc
-  :: (HasEffs '[T, Q, Log, Async] m
-     ,Has Bool m
-     )
-  => m (Maybe (Int, [Int], [Int], Bool, Bool))
+  :: (HasEffs '[T, Q, Log, Async] m)
+  => m (Maybe (Int, [Int], [Int]))
 someFunc = runMaybeT $ do
   x <- lift op
   y <- lift $ hop op
@@ -59,9 +55,9 @@ someFunc = runMaybeT $ do
       _ -> Nothing
   w <- lift qop
   when w . void . lift . async $ logg "I'm here!"
-  d <- lift asksEff
-  g <- lift . locallyEff not $ asksEff
-  return (x, y, z, d, g)
+--  d <- lift asksEff
+--  g <- lift . locallyEff not $ asksEff
+  return (x, y, z)
 
 someFunc' :: (HasEffs '[T] m, MonadPlus m) => m (Int, [Int], [Int])
 someFunc' = do
@@ -78,7 +74,7 @@ main = do
     & runEffT
     $ Q{ _qop = return True}
     :<> dummyT
-    :<> Const False
+--    :<> Const False
     :<> stdoutLog
     :<> concurrentAsync
   print v

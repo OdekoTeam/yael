@@ -20,13 +20,11 @@ import GHC.TypeLits
 import GHC.Generics
 import Control.Monad.Base
 import Control.Monad.Trans.Control
-import Control.Monad.Identity
 
 
 newtype EffT (f :: (* -> *) -> *) (m :: * -> *) (a :: *) = EffT
   { unEffT :: R.ReaderT (f m) m a
-  }
-  deriving newtype ( Functor, Applicative, Monad, MonadIO, MonadThrow, MonadCatch
+  } deriving newtype ( Functor, Applicative, Monad, MonadIO, MonadThrow, MonadCatch
                      , MonadMask, MonadPlus, Alternative, MonadBase s, MonadBaseControl s)
 
 runEffT
@@ -36,7 +34,6 @@ runEffT
   -> m a
 runEffT (EffT (R.ReaderT r)) y = r y
 
-{-
 instance MonadUnliftIO m => MonadUnliftIO (EffT f m) where
   {-# INLINE askUnliftIO #-}
   askUnliftIO = EffT . R.ReaderT $ \r ->
@@ -47,31 +44,28 @@ instance MonadUnliftIO m => MonadUnliftIO (EffT f m) where
     EffT . R.ReaderT $ \r ->
     withRunInIO $ \run ->
     inner (run . flip runEffT r)
--}
 
-{-
 instance MonadTrans (EffT f) where
-  lift x = EffT $ \_ -> x
--}
+  lift = EffT . lift
 
-withEffT :: (Monad m, Project (f m) (g m)) => (forall n . g n -> n a) -> EffT f m a
-withEffT ap = withEffT' $ const ap
+withEffT :: (Monad m, Project f g) => (forall n . g n -> n a) -> EffT f m a
+withEffT use = withEffT' $ const use
 
 withEffT'
-  :: (Project (f m) (g m))
+  :: (Project f g)
   => (forall n . (forall x . EffT f m x -> n x) -> g n -> n a)
   -> EffT f m a
-withEffT' ap = EffT . R.ReaderT $ \f -> ap (\e -> runEffT e f) (f ^. prj)
+withEffT' use = EffT . R.ReaderT $ \f -> use (\e -> runEffT e f) (f ^. prj)
 
 data X m = X
   { _xop :: String -> Int -> m Bool
   , _yop :: forall a . m a -> m [a]
   }
 
-xop :: (Monad m, Project (f m) (X m)) => String -> Int -> EffT f m Bool
+xop :: (Monad m, Project f X) => String -> Int -> EffT f m Bool
 xop s i = withEffT $ \X{_xop} -> _xop s i
 
-yop :: (Monad m, Project (f m) (X m)) => EffT f m a -> EffT f m [a]
+yop :: (Monad m, Project f X) => EffT f m a -> EffT f m [a]
 yop e = withEffT' $ \lower X{_yop} -> _yop $ lower e
 
 showX :: (MonadIO m) => X m
@@ -83,8 +77,8 @@ showX = X
   , _yop = \m -> replicateM 10 m
   }
 
-localEffT :: (f m -> f m) -> EffT f m a -> EffT f m a
-localEffT f (EffT (R.ReaderT r)) = EffT . R.ReaderT $ r . f
+localEffT :: Project f g => (g m -> g m) -> EffT f m a -> EffT f m a
+localEffT modify (EffT (R.ReaderT r)) = EffT . R.ReaderT $ \f -> r $ f & prj %~ modify
 
 mapEffT
   :: Monad m
@@ -93,15 +87,25 @@ mapEffT
   -> EffT f m a
 mapEffT f (EffT (R.ReaderT r)) = EffT . R.ReaderT $ \g -> r (f g)
 
-class MonadEff m where
+class Monad m => MonadEff m where
   type F m :: (* -> *) -> *
 
   withEff'
-    :: (forall n. (forall x . m x -> n x) -> F m n -> n a)
+    :: (Project (F m) g)
+    => (forall n . (forall x . m x -> n x) -> g n -> n a)
     -> m a
 
+withEff :: (Project (F m) g, MonadEff m) => (forall n . g n -> n a) -> m a
+withEff use = withEff' $ const use
+
+instance Monad m => MonadEff (EffT f m) where
+  type F (EffT f m) = f
+
+  withEff' = withEffT'
+
 class Project f g where
-  prj :: Lens' f g
+
+  prj :: Lens' (f m) (g m)
 
 instance {-# OVERLAPPING #-} Project x x where
   prj = id
@@ -114,30 +118,36 @@ data (a :<> b) (m :: * -> *) = a m  :<> b m
 instance Field1 ((a :<> b) m) ((a' :<> b) m) (a m) (a' m)
 instance Field2 ((a :<> b) m) ((a :<> b') m) (b m) (b' m)
 
+{-
 instance Project (Const x (b :: (* -> *))) x where
   prj = lens getConst (const Const)
+-}
 
+{-
 instance {-# OVERLAPPING #-} Project ((Const a :<> b) m) a where
   prj = _1 . prj
+-}
 
-instance {-# OVERLAPPING #-} Project ((a :<> b) m) (a m) where
+instance {-# OVERLAPPING #-} Project ((a :<> b)) a where
   prj = _1
 
-instance {-# OVERLAPPABLE #-} Project (b m) c => Project ((a :<> b) m) c where
-  prj = _2 . (prj @(b m) @c)
+instance {-# OVERLAPPABLE #-} Project b c => Project ((a :<> b)) c where
+  prj = _2 . (prj @b @c)
 
 
 type family MissingError x y where
-  MissingError x (f (m :: * -> *)) =
+  MissingError x f =
     'Text "Expected a handler for " ':<>: 'ShowType f ':<>: 'Text " to provided through `runEffT`"
     ':$$: 'Text "The handlers available are: " ':<>: ShowStack (Stacks x)
+{-
   MissingError x v =
     'Text "Expected data " ':<>: 'ShowType v ':<>: 'Text " to provided through `runEffT`"
     ':$$: 'Text "The handlers available are: " ':<>: ShowStack (Stacks x)
+-}
 
 type family Stacks x where
-  Stacks ((f :<> g) m) = f ': (Stacks (g m))
-  Stacks (f m) = '[f]
+  Stacks (f :<> g) = f ': (Stacks g)
+  Stacks f = '[f]
 
 type family ShowStack (xs :: [k]) where
   ShowStack '[x] = 'ShowType x
@@ -149,24 +159,13 @@ instance
   Project x y where
   prj = error "Missing implementation! This should be a type error"
 
-{-
-type Has a m = (Project (F m m) a, MonadEff m)
-
-type HasEff f m = Has (f m) m
-
-asksEff :: (Has a m) => m a
-asksEff = (^. prj) <$> askEff
-
-locallyEff :: (Has a m) => (a -> a) -> m x -> m x
-locallyEff f mx = localEff (prj %~ f)  mx
+type HasEff a m = (Project (F m) a, MonadEff m)
 
 data AccessType where
   Effect :: f -> AccessType
-  Data :: a -> AccessType
 
 type family HasOne x m where
   HasOne ('Effect f) m = HasEff f m
-  HasOne ('Data a) m = Has a m
 
 type family HasAll xs m where
   HasAll '[x] m = HasOne x m
@@ -186,9 +185,8 @@ infix 8 :/
 type family fs :/ ds where
   '[] :/ '[] = '[]
   (f ': fs) :/ ds = 'Effect f ': (fs :/ ds)
-  '[] :/ (d ': ds) = 'Data d ': ('[] :/ ds)
+
 
 infix 7 :+
 
 type (:+) v effs = forall m . (HasEffs effs m) => m v
--}
