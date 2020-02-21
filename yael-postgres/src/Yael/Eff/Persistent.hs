@@ -13,7 +13,7 @@ newtype Persistent m = Persistent
   { _runPersistent :: forall a . SqlPersistT m a -> m a
   }
 
-runPersistent :: (HasEff Persistent f) => SqlPersistT (EffT f m) a -> EffT f m a
+runPersistent :: (HasEff Persistent f m) => SqlPersistT (EffT f m) a -> EffT f m a
 runPersistent p = withEffT' $ \lower Persistent{_runPersistent} -> _runPersistent $ mapReaderT lower p
 
 poolPersistent :: (MonadUnliftIO m) => Pool SqlBackend -> Persistent m

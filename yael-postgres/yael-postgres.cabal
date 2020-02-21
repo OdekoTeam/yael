@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e6e739c4228e79a3cbf949d2445bd59ab1dd1341c4181e00e83fff6ccca2eb7e
+-- hash: 697f770b6368bb68959dc11d36b8fd921553089e1cb8cee3dbe1f697df015030
 
 name:           yael-postgres
 version:        0.1.0.0
@@ -39,6 +39,7 @@ library
       base >=4.7 && <5
     , monad-control
     , monad-logger
+    , mtl
     , persistent
     , persistent-postgresql
     , postgresql-simple
@@ -59,6 +60,7 @@ executable yael-postgres-exe
       base >=4.7 && <5
     , monad-control
     , monad-logger
+    , mtl
     , persistent
     , persistent-postgresql
     , postgresql-simple
@@ -81,6 +83,7 @@ test-suite yael-postgres-test
       base >=4.7 && <5
     , monad-control
     , monad-logger
+    , mtl
     , persistent
     , persistent-postgresql
     , postgresql-simple

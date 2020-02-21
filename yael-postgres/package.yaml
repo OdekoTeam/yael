@@ -14,6 +14,7 @@ description:         Please see the README on GitHub at <https://github.com/benw
 dependencies:
 - base >= 4.7 && < 5
 - yael >= 0.1.0.0 && < 0.2
+- mtl
 - persistent
 - persistent-postgresql
 - unliftio

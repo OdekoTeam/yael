@@ -9,7 +9,7 @@ newtype Sql (m :: * -> *) = Sql
   { _withSqlConn :: forall a . (Connection -> m a) -> m a
   }
 
-withSqlConn :: (HasEff Sql f) => (Connection -> EffT f m a) -> EffT f m a
+withSqlConn :: (HasEff Sql f m) => (Connection -> EffT f m a) -> EffT f m a
 withSqlConn f = withEffT' $ \lower Sql{_withSqlConn} -> _withSqlConn $ lower . f
 
 connSql :: Connection -> Sql m

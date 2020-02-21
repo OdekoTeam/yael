@@ -48,34 +48,14 @@ instance MonadUnliftIO m => MonadUnliftIO (EffT f m) where
 instance MonadTrans (EffT f) where
   lift = EffT . lift
 
-withEffT :: (Monad m, Project f g) => (forall n . g n -> n a) -> EffT f m a
+withEffT :: (Monad m, Project f g) => (forall n . Monad n => g n -> n a) -> EffT f m a
 withEffT use = withEffT' $ const use
 
 withEffT'
-  :: (Project f g)
-  => (forall n . (forall x . EffT f m x -> n x) -> g n -> n a)
+  :: (Project f g, Monad m)
+  => (forall n . Monad n => (forall x . EffT f m x -> n x) -> g n -> n a)
   -> EffT f m a
 withEffT' use = EffT . R.ReaderT $ \f -> use (\e -> runEffT e f) (f ^. prj)
-
-data X m = X
-  { _xop :: String -> Int -> m Bool
-  , _yop :: forall a . m a -> m [a]
-  }
-
-xop :: (Monad m, Project f X) => String -> Int -> EffT f m Bool
-xop s i = withEffT $ \X{_xop} -> _xop s i
-
-yop :: (Monad m, Project f X) => EffT f m a -> EffT f m [a]
-yop e = withEffT' $ \lower X{_yop} -> _yop $ lower e
-
-showX :: (MonadIO m) => X m
-showX = X
-  { _xop = \s i -> liftIO $ do
-      putStrLn s
-      print i
-      return True
-  , _yop = \m -> replicateM 10 m
-  }
 
 localEffT :: Project f g => (g m -> g m) -> EffT f m a -> EffT f m a
 localEffT modify (EffT (R.ReaderT r)) = EffT . R.ReaderT $ \f -> r $ f & prj %~ modify
@@ -88,7 +68,6 @@ mapEffT
 mapEffT f (EffT (R.ReaderT r)) = EffT . R.ReaderT $ \g -> r (f g)
 
 class Project (f :: (* -> *) -> *) g where
-
   prj :: Lens' (f m) (g m)
 
 instance {-# OVERLAPPING #-} Project x x where
@@ -143,26 +122,26 @@ instance
   Project x y where
   prj = error "Missing implementation! This should be a type error"
 
-type HasEff a m = (Project m a)
+type HasEff a f m = (Project f a, Monad m)
 
 data AccessType where
   Effect :: f -> AccessType
 
-type family HasOne x m where
-  HasOne ('Effect f) m = Project m f
+type family HasOne x f m where
+  HasOne ('Effect e) f m = HasEff e f m
 
-type family HasAll xs m where
-  HasAll '[x] m = HasOne x m
-  HasAll (x ': xs) m = (HasOne x m, HasAll xs m)
+type family HasAll xs f m where
+  HasAll '[x] f m = HasOne x f m
+  HasAll (x ': xs) f m = (HasOne x f m, HasAll xs f m)
 
-type family HasEffs' k (xs :: [k]) m where
-  HasEffs' AccessType xs m = HasAll xs m
-  HasEffs' ((* -> *) -> *) '[x] m = HasOne ('Effect x) m
-  HasEffs' ((* -> *) -> *) (x ': xs) m = (HasOne ('Effect x) m, HasEffs' ((* -> *) -> *) xs m)
+type family HasEffs' k (xs :: [k]) f m where
+  HasEffs' AccessType xs f m = HasAll xs f m
+  HasEffs' ((* -> *) -> *) '[x] f m  = HasOne ('Effect x) f m
+  HasEffs' ((* -> *) -> *) (x ': xs) f m = (HasOne ('Effect x) f m, HasEffs' ((* -> *) -> *) xs f m)
 
 type K (x :: [k]) = k
 
-type HasEffs effs m = HasEffs' (K effs) effs m
+type HasEffs effs f m = HasEffs' (K effs) effs f m
 
 infix 8 :/
 
@@ -173,4 +152,4 @@ type family fs :/ ds where
 
 infix 7 :+
 
-type (:+) v effs = forall m f . (HasEffs effs f, Monad m) => EffT f m v
+type (:+) v effs = forall m f . (HasEffs effs f m) => EffT f m v

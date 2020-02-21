@@ -3,6 +3,7 @@ module Main where
 import Yael.Eff
 import Yael.Eff.Log
 import Yael.Eff.Async
+import Yael.Eff.Data
 import Control.Monad.Trans
 import Control.Monad.Trans.Maybe
 import Control.Monad
@@ -23,7 +24,7 @@ dummyT = T
 op :: Int :+ '[T]
 op = withEffT _op
 
-hop :: HasEffs '[T] f => EffT f m Int -> EffT f m [Int]
+hop :: (HasEffs '[T] f m) => EffT f m Int -> EffT f m [Int]
 hop mx = withEffT' $ \lower T{_hop} -> _hop (lower mx)
 
 mop :: Maybe Int :+ '[T]
@@ -37,8 +38,8 @@ qop :: Bool :+ '[Q]
 qop = withEffT _qop
 
 someFunc
-  :: (HasEffs '[T, Q, Log, Async] f, Monad m)
-  => EffT f m (Maybe (Int, [Int], [Int]))
+  :: (HasEffs '[T, Q, Log, Async, Data Bool, Data String] f m)
+  => EffT f m (Maybe (Int, [Int], [Int], Bool, Bool))
 someFunc = runMaybeT $ do
   x <- lift op
   y <- lift $ hop op
@@ -49,11 +50,12 @@ someFunc = runMaybeT $ do
       _ -> Nothing
   w <- lift qop
   when w . void . lift . async $ logg "I'm here!"
---  d <- lift asksEff
---  g <- lift . locallyEff not $ asksEff
-  return (x, y, z)
+  d <- lift getData
+  g <- lift . localData not $ getData
+  lift $ getData >>= logg
+  return (x, y, z, d, g)
 
-someFunc' :: (HasEffs '[T] f, MonadPlus m) => EffT f m (Int, [Int], [Int])
+someFunc' :: (HasEffs '[T] f m, MonadPlus m) => EffT f m (Int, [Int], [Int])
 someFunc' = do
   x <- op
   _ <- mzero
@@ -68,7 +70,8 @@ main = do
     & runEffT
     $ Q{ _qop = return True}
     :<> dummyT
---    :<> Const False
+    :<> Data False
+    :<> Data "hello"
     :<> stdoutLog
     :<> concurrentAsync
   print v

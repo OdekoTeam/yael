@@ -28,6 +28,7 @@ library:
   source-dirs: src
   exposed-modules:
   - Yael.Eff
+  - Yael.Eff.Data
   - Yael.Eff.Log
   - Yael.Eff.Async
 
